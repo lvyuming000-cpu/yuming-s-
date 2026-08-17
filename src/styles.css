@@ -1,0 +1,104 @@
+:root {
+  --ink: #17141a;
+  --edge: #3b3441;
+  --dim: #6e6675;
+  --tea: #c9d94f;
+  color-scheme: dark;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border-radius: 4px;
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--dim);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 1px solid var(--tea);
+  outline-offset: 1px;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.fw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  gap: 11px;
+}
+
+/* 拆解卡双栏 —— 感受 / 原料 */
+.fw-teardown-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* 桌面端侧栏 / 移动端顶部横条(§6.5) */
+.fw-spine-h {
+  display: none;
+}
+
+/* 移动端优先:核心使用场景是手机(§6.6) */
+@media (max-width: 760px) {
+  .fw-spine-v {
+    display: none !important;
+  }
+  .fw-spine-h {
+    display: block !important;
+  }
+  .fw-grid {
+    grid-template-columns: 1fr;
+  }
+  .fw-teardown-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes fw-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 106, 92, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(217, 106, 92, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
