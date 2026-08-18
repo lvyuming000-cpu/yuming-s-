@@ -10,13 +10,26 @@
 
 ## 跑起来
 
+需要 Node 20.6 以上。
+
 ```bash
 npm install
-cp .env.example .env      # 至少填 ANTHROPIC_API_KEY
+npm run setup             # 交互式:问你要 API key,自动写好 .env
 npm run dev               # 服务端 :8787 + 前端 :5173
 ```
 
 打开 http://localhost:5173,用任意邮箱进入(开发级身份,见下)。
+
+不想用 setup 也可以自己来 —— 下面两种都行:
+
+```bash
+cp .env.example .env      # 然后用编辑器填 ANTHROPIC_API_KEY
+# 或者完全不建文件,启动时直接给:
+ANTHROPIC_API_KEY=sk-ant-xxx npm run dev
+```
+
+优先级是「真实环境变量 > .env」,空字符串算没设。没有 key 时卡片照样能开、
+参考库照样能记,只有 AI 推演接口返回 503。
 
 生产构建:
 
@@ -137,6 +150,7 @@ server/
   retrieval.ts   参考库检索策略
   auth.ts        身份层(待替换)
   stt.ts         语音转写转发
+  env.ts         .env 加载(必须第一个被 import)
 src/
   voice/         语音 provider 抽象
   components/    界面

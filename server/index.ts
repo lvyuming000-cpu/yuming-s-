@@ -1,3 +1,6 @@
+// 必须第一个 import:先把 .env 灌进 process.env,再让其他模块读它
+import "./env.js";
+import Anthropic from "@anthropic-ai/sdk";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
@@ -1022,6 +1025,13 @@ app.post(
    错误处理与静态资源
    ============================================================ */
 
+/**
+ * 把 AI 调用的失败翻译成人能读懂的话。
+ *
+ * 目标用户不是工程师,直接把 `403 {"error":{"type":"forbidden"...}}` 甩到界面上
+ * 等于没报错 —— 看的人分不清是 key 不对、网络不通,还是被限流,而这三件事的
+ * 处理方式完全不同。所以这里按状态码分流,每一类都给出下一步动作。
+ */
 function handleAIError(e: unknown, res: express.Response): void {
   if (e instanceof AIRefusal) {
     res.status(422).json({
@@ -1029,9 +1039,51 @@ function handleAIError(e: unknown, res: express.Response): void {
     });
     return;
   }
-  const msg = e instanceof Error ? e.message : String(e);
-  console.error("[ai]", msg);
-  res.status(502).json({ error: `这轮没接上:${msg}` });
+
+  const raw = e instanceof Error ? e.message : String(e);
+  console.error("[ai]", raw);
+
+  // 连不上(DNS / 超时 / 被墙),压根没拿到 HTTP 响应
+  if (e instanceof Anthropic.APIConnectionError) {
+    res.status(502).json({
+      error:
+        "连不上 Anthropic。检查网络 —— 如果在中国大陆,api.anthropic.com 需要挂代理才能直连。",
+    });
+    return;
+  }
+
+  if (e instanceof Anthropic.APIError && typeof e.status === "number") {
+    const hint = hintForStatus(e.status, raw);
+    res.status(e.status === 429 ? 429 : 502).json({ error: hint });
+    return;
+  }
+
+  res.status(502).json({ error: `这轮没接上:${raw}` });
+}
+
+function hintForStatus(status: number, raw: string): string {
+  switch (status) {
+    case 401:
+      return "API key 无效。去 console.anthropic.com 确认这串 key 还在、没被删,注意别把示例里的占位符当成真 key 用了。";
+    case 403:
+      // Anthropic 自己极少回 403;这个形状通常是中间的网络设备拦的
+      return (
+        "请求被拒绝(403)。这通常不是 key 的问题 —— Anthropic 对无效 key 回的是 401。" +
+        "更常见的原因是中间有网络设备把请求拦了(在中国大陆需要挂代理)," +
+        "其次才是这个 key 所属组织没有开通对应权限。"
+      );
+    case 404:
+      return "模型不存在。检查 ANTHROPIC_MODEL 是不是拼错了。";
+    case 413:
+      return "这轮内容太长了。把对话截短一点,或者调低 HISTORY_TURNS。";
+    case 429:
+      return "被限流了,等一下再发。频繁触发的话去 console.anthropic.com 看用量上限。";
+    case 529:
+      return "Anthropic 那边过载了,过一会儿重发这一句。";
+    default:
+      if (status >= 500) return `Anthropic 服务端出错(${status}),过一会儿重发。`;
+      return `这轮没接上(${status}):${raw}`;
+  }
 }
 
 const DIST = path.resolve(process.cwd(), "dist");
