@@ -5,6 +5,7 @@
   "type": "module",
   "description": "风味设计工作台 — 饮品风味研发的对话式工具(设计卡 / 拆解卡 / 参考库 / 可配置框架)",
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "dev": "concurrently -n server,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite",
@@ -30,5 +31,8 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
+  },
+  "engines": {
+    "node": ">=20.6"
   }
 }

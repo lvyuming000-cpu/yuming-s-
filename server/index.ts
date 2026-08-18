@@ -1,3 +1,5 @@
+// 必须第一个 import:先把 .env 灌进 process.env,再让其他模块读它
+import "./env.js";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
